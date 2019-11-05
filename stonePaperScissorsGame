@@ -1,0 +1,145 @@
+LIST	P=18F4520
+		#include<P18F4520.INC>
+		
+		CONFIG OSC=XT
+		CONFIG WDT=OFF
+		CONFIG LVP=OFF
+		
+		ORG 0x0000
+		goto Main
+
+		cblock 0x00
+		pscore
+		cscore
+		pchoice
+		cchoice
+		D_H
+		D_L
+		ENDC
+		
+		ORG 0x0020
+Main:	clrf TRISB
+		clrf TRISD
+		setf TRISC
+		clrf pscore
+		clrf cscore
+		movlw 0xC8
+		movwf T0CON
+
+B_press:btfss PORTC,0
+		call Rock
+		btfss PORTC,1
+		call Paper
+		btfss PORTC,2
+		call Scissors
+		goto B_press
+
+Rock:	movlw 0x00
+		movwf PORTB
+		movlw 0x50
+		movwf PORTD
+		call Delay
+		movlw 0x50
+		movwf cchoice
+		btfss TMR0L,0
+		call Display
+		incf cscore
+		movlw 0x73
+		movwf cchoice
+		btfss TMR0L,1
+		call Display
+		decf cscore
+		incf pscore
+		movlw 0x6D
+		movwf cchoice
+		call Display
+
+Paper:	movlw 0x00
+		movwf PORTB
+		movlw 0x73
+		movwf PORTD
+		call Delay
+		incf pscore
+		movlw 0x50
+		movwf cchoice
+		btfss TMR0L,0
+		call Display
+		decf pscore
+		movlw 0x73
+		movwf cchoice
+		btfss TMR0L,1
+		call Display
+		incf cscore
+		movlw 0x6D
+		movwf cchoice
+		call Display
+
+Scissors:	movlw 0x00
+			movwf PORTB
+			movlw 0x6D
+			movwf PORTD
+			call Delay
+			incf cscore
+			movlw 0x50
+			movwf cchoice
+			btfss TMR0L,0
+			call Display
+			decf cscore
+			incf pscore
+			movlw 0x73
+			movwf cchoice
+			btfss TMR0L,1
+			call Display
+			decf pscore
+			movlw 0x6D
+			movwf cchoice
+			call Display
+
+Display:	movlw 0x01
+			movwf PORTB
+			movff cchoice, PORTD
+			call Delay
+			movlw low SCORE_TBL
+			movwf TBLPTRL
+			movlw high SCORE_TBL
+			movwf TBLPTRH
+			movlw upper SCORE_TBL
+			movwf TBLPTRU
+			movlw 0x02
+			movwf PORTB
+			movf pscore,W
+			addwf TBLPTRL,F
+			tblrd*
+			movff TABLAT,PORTD
+			call Delay			
+
+			movlw low SCORE_TBL
+			movwf TBLPTRL
+			movlw high SCORE_TBL
+			movwf TBLPTRH
+			movlw upper SCORE_TBL
+			movwf TBLPTRU
+			movlw 0x03
+			movwf PORTB
+			movf cscore,W
+			addwf TBLPTRL,F
+			tblrd*
+			movff TABLAT,PORTD
+			goto B_press
+
+Delay:	movlw 0xf0
+		movwf D_H
+Loop1:	movlw 0xf0
+		movwf D_L
+Loop2:	decf D_L
+		bnz Loop2
+		decf D_H
+		bnz Loop1
+		return
+				
+
+
+SCORE_TBL
+	db 0x3F,0x06,0x5B,0x4f,0x66,0x6D,0x7D,0x07,0x7F,0x67
+
+	END
